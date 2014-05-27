@@ -1,0 +1,16 @@
+{application, game,
+ [
+  {description, "An erlang application."},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  crypto,
+                  lager,
+                  luerl,
+                  ibrowse
+                 ]},
+  {mod, {game_app, []}},
+  {env, [{policy_file, liberal},{gameport,9933},{listen,2},{flashport,843}]}
+ ]}.
