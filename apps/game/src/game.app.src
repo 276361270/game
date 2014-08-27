@@ -1,0 +1,26 @@
+{application, game,
+ [
+  {description, "An erlang application."},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications, [
+                  sasl,
+                  kernel,
+                  stdlib,
+                  crypto,
+                  mnesia,
+                  syntax_tools,
+                  compiler,
+                  goldrush,
+                  lager,
+                  luerl,
+                  ibrowse,
+                  cowlib,
+                  cowboy,
+                  resource_discovery,
+                  msgpack
+                  %%boss_db,
+                 ]},
+  {mod, {game_app, []}},
+  {env, [{policy_file, liberal},{gameport,9933},{listen,2},{flashport,8843},{webport,8090},{contact_nodes,'game@127.0.0.1'},{profile,true}]}
+ ]}.
