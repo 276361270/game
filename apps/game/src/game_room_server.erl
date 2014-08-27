@@ -8,11 +8,13 @@
 	 handle_info/2, terminate/2, code_change/3]).
 
 -export([delete/1, update_room_maxuser/2,
-	 update_room_pass/2]).
+	 update_room_pass/2,user_jion_room/2]).
+%% tick erver time
+-define (TICKTIME, 1000).
 
 -record(state,
 	{room_name, create_time, room_ower,
-	 room_password = undefined, max_user = 4}).
+	 room_password = undefined, max_user=4,room_user_list=[],timerref=undefined,timer_count=0}).
 
 start_link(RoomName, RoomPass, RoomOwer) ->
     gen_server:start_link(?MODULE,
@@ -27,6 +29,9 @@ update_room_maxuser(RoomPid, MaxUser) ->
     gen_server:call(RoomPid,
 		    {update_room_maxuser, MaxUser}).
 
+user_jion_room(RoomPid,UserPid)->
+	gen_server:call(RoomPid, {user_jion_room,UserPid}).     
+
 init([RoomName, RoomPass, RoomOwer]) ->
     {ok,
      #state{room_name = RoomName, room_password = RoomPass,
@@ -39,19 +44,51 @@ handle_call({update_room_pass, PassWord}, _From,
 handle_call({update_room_maxuser, MaxUser}, _From,
 	    State) ->
     {reply, ok, State#state{max_user = MaxUser}};
+
+handle_call({user_jion_room,UserPid},_From,State=#state{room_user_list=RoomUserList})->
+    io:format("~p~n", [RoomUserList]), 
+    NewRoomUserList = [UserPid|RoomUserList],
+    Reply = case erlang:length(NewRoomUserList)==1 of 
+		true->
+		    {ok,TimerRef} = start_timer_tick(),
+		    {reply,ok,State#state{room_user_list=NewRoomUserList,timerref=TimerRef}};
+		false ->
+		    {reply,ok,State#state{room_user_list=NewRoomUserList}}
+	    end,  
+    Reply;	
 handle_call(_Request, _From, State) ->
     {reply, {error, unknown_call}, State}.
 
+
+
 handle_cast(destroy, State) -> {stop, normal, State};
+
 handle_cast(_Msg, State) -> {noreply, State}.
+handle_info({timer_tick,_Message},State=#state{timer_count=Count})->
+    io:format("~p~p~n", [self(),Count]),
+    {noreply,State#state{timer_count=Count+1}};
 
 handle_info(_Info, State) -> {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State=#state{timerref=TimerRef}) ->
+	%% close timerref
+	if
+		TimerRef=/=undefined ->
+			timer:cancel(TimerRef) 
+	end,
     error_logger:info_msg("Module is: ~p,Line is: ~p Message is: ~p",
-			  [game_room_server, 43, "terminate"]),
+			  [?MODULE, ?LINE, "terminate"]),
     ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
+%%private
 
+start_timer_tick(Time,Message)->
+    timer:send_interval(Time,Message).
+
+start_timer_tick(Message)->
+    start_timer_tick(?TICKTIME,{timer_tick,Message}).	 
+
+start_timer_tick()->
+    start_timer_tick(tick).	
