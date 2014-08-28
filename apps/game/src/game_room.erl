@@ -14,4 +14,9 @@ update_room_pass(RooomPid,PassWord)->
 %% update room maxuser	
 update_room_maxuser(RoomPid,MaxUser)->
 	game_room_server:update_room_maxuser(RoomPid, MaxUser).
-
+%% user leave room
+user_leave_room(RoomPid,UserPid)->
+	game_room_server:user_leave_room(RoomPid, UserPid).
+%% user jion room
+user_jion_room(RoomPid,UserPid)->	
+	game_room_server:user_jion_room(RoomPid, UserPid). 
