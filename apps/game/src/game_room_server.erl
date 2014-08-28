@@ -8,13 +8,14 @@
 	 handle_info/2, terminate/2, code_change/3]).
 
 -export([delete/1, update_room_maxuser/2,
-	 update_room_pass/2,user_jion_room/2]).
+	 update_room_pass/2,user_jion_room/2,user_leave_room/2]).
 %% tick erver time
 -define (TICKTIME, 1000).
+-define (MAX_USER,4).
 
 -record(state,
 	{room_name, create_time, room_ower,
-	 room_password = undefined, max_user=4,room_user_list=[],timerref=undefined,timer_count=0}).
+	 room_password = undefined, max_user=?MAX_USER,room_user_list=[],timerref=undefined,timer_count=0}).
 
 start_link(RoomName, RoomPass, RoomOwer) ->
     gen_server:start_link(?MODULE,
@@ -30,7 +31,11 @@ update_room_maxuser(RoomPid, MaxUser) ->
 		    {update_room_maxuser, MaxUser}).
 
 user_jion_room(RoomPid,UserPid)->
-	gen_server:call(RoomPid, {user_jion_room,UserPid}).     
+	gen_server:call(RoomPid, {user_jion_room,UserPid}).   
+
+user_leave_room(RoomPid,UserPid)->
+	gen_server:call(RoomPid, {user_leave_room,UserPid}). 
+
 
 init([RoomName, RoomPass, RoomOwer]) ->
     {ok,
@@ -44,7 +49,7 @@ handle_call({update_room_pass, PassWord}, _From,
 handle_call({update_room_maxuser, MaxUser}, _From,
 	    State) ->
     {reply, ok, State#state{max_user = MaxUser}};
-
+ %% userjion room     
 handle_call({user_jion_room,UserPid},_From,State=#state{room_user_list=RoomUserList})->
     io:format("~p~n", [RoomUserList]), 
     NewRoomUserList = [UserPid|RoomUserList],
@@ -56,6 +61,17 @@ handle_call({user_jion_room,UserPid},_From,State=#state{room_user_list=RoomUserL
 		    {reply,ok,State#state{room_user_list=NewRoomUserList}}
 	    end,  
     Reply;	
+%% user leave room
+handle_call({user_leave_room,UserPid},_From,State=#state{room_user_list=RoomUserList})->
+	NewRoomUserList = lists:delete(UserPid, RoomUserList),
+    Reply = case erlang:length(NewRoomUserList)=:=0 of
+    		true->
+    			{stop,normal,State};
+    		false->
+    			{reply,ok,State#state{room_user_list=NewRoomUserList}}
+    		end,
+    Reply;	
+
 handle_call(_Request, _From, State) ->
     {reply, {error, unknown_call}, State}.
 
